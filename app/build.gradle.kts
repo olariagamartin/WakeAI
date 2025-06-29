@@ -7,6 +7,10 @@ android {
     namespace = "com.example.wakeai"
     compileSdk = 35
 
+    buildFeatures {
+        dataBinding = true
+    }
+
     defaultConfig {
         applicationId = "com.example.wakeai"
         minSdk = 24
