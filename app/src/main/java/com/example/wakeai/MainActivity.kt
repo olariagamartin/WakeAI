@@ -19,7 +19,7 @@ import com.example.wakeai.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
 
-    private val ACCESS_KEY = "9mluvEpgDHKo6dIRdHOv3alIMQBsVY5dDCcf3NPkkpkqaluJNuKYXQ=="
+    private val PORCUPINE_API_KEY = "9mluvEpgDHKo6dIRdHOv3alIMQBsVY5dDCcf3NPkkpkqaluJNuKYXQ=="
     private lateinit var porcupineManager: PorcupineManager
     private lateinit var binding: ActivityMainBinding
     private val AUDIO_PERMISSION_CODE = 101
@@ -36,7 +36,8 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.button.setOnClickListener {
-            requestAudioPermission()
+            OpenAIApiService.getChatGPTResponse("give me a one-sentece joke")
+            //requestAudioPermission()
         }
     }
 
@@ -58,7 +59,7 @@ class MainActivity : AppCompatActivity() {
     private fun startWakeWordDetection() {
         try {
             porcupineManager = PorcupineManager.Builder()
-                .setAccessKey(ACCESS_KEY)
+                .setAccessKey(PORCUPINE_API_KEY)
                 .setKeywords(arrayOf(Porcupine.BuiltInKeyword.JARVIS))
                 .setSensitivity(0.5f)
                 .build(applicationContext, porcupineCallback)
