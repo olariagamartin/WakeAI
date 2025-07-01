@@ -6,6 +6,7 @@ import ai.picovoice.porcupine.PorcupineManager
 import ai.picovoice.porcupine.PorcupineManagerCallback
 import android.Manifest
 import android.content.pm.PackageManager
+import android.media.MediaPlayer
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
@@ -17,6 +18,9 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.databinding.DataBindingUtil
 import com.example.wakeai.databinding.ActivityMainBinding
+import java.io.File
+import java.io.FileOutputStream
+import java.io.InputStream
 
 class MainActivity : AppCompatActivity() {
 
@@ -49,13 +53,18 @@ class MainActivity : AppCompatActivity() {
             audioRecorderWrapper.startListeningToUserSpeech { result ->
                 if (result != null) {
                     Log.d("MainActivity", "Audio data received, size: ${result.size}")
-                    OpenAIApiService.sendAudioToWhisperAPI(result)
+                    OpenAIApiService.sendAudioToWhisperAPI(result) { whisperResponse ->
+                        OpenAIApiService.getChatGPTResponse(whisperResponse) { textResponse ->
+                            OpenAIApiService.generateAudioFromText(textResponse) { audioTranscribed ->
+                                Log.d("MainActivity", "Audio generated")
+                                playAudio(audioTranscribed)
+                            }
+                        }
+                    }
                 } else {
                     Log.d("MainActivity", "No audio data received")
                 }
             }
-            //OpenAIApiService.getChatGPTResponse("give me a one-sentece joke")
-            //requestAudioPermission()
         }
     }
 
@@ -109,6 +118,25 @@ class MainActivity : AppCompatActivity() {
         } else {
             Toast.makeText(this, "Microphone permission required!", Toast.LENGTH_SHORT).show()
         }
+    }
+
+    fun playAudio(audioStream: InputStream) {
+        val tempAudioFile = File.createTempFile("tts_audio", ".mp3", cacheDir)
+        audioStream.use { input ->
+            FileOutputStream(tempAudioFile).use { output ->
+                input.copyTo(output)
+            }
+        }
+
+        val mediaPlayer = MediaPlayer()
+        mediaPlayer.setDataSource(tempAudioFile.absolutePath)
+        mediaPlayer.prepare()
+        mediaPlayer.setOnCompletionListener {
+            mediaPlayer.release()
+            tempAudioFile.delete()
+            // Resume listening if needed
+        }
+        mediaPlayer.start()
     }
 
     override fun onDestroy() {

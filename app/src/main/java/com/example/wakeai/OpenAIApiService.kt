@@ -16,6 +16,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import org.json.JSONObject
 import java.io.IOException
+import java.io.InputStream
 
 object OpenAIApiService {
     private const val BASE_URL = "https://api.openai.com/v1"
@@ -24,7 +25,7 @@ object OpenAIApiService {
 
     private const val OPEN_AI_API_KEY = "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"
 
-    fun getChatGPTResponse(prompt: String) {
+    fun getChatGPTResponse(prompt: String, onResult: (String) -> Unit) {
 
         val jsonBody = JSONObject().apply {
             put("model", "gpt-4.1")
@@ -51,12 +52,12 @@ object OpenAIApiService {
                     .getString("text")
 
                 Log.d("OpenAIApiService", "response: $responseText")
-                //generateAudioFromText(responseText)
+                onResult(responseText)
             }
         })
     }
 
-    fun sendAudioToWhisperAPI(audioData: ByteArray) {
+    fun sendAudioToWhisperAPI(audioData: ByteArray, onResult: (String) -> Unit) {
         CoroutineScope(Dispatchers.IO).launch {
             val client = OkHttpClient()
 
@@ -83,11 +84,37 @@ object OpenAIApiService {
                     val transcribedText = jsonResponse.getString("text")
                     println("Transcribed Text: $transcribedText")
 
-                    // Now you can send the transcription to ChatGPT
-                    //getChatGPTResponse(transcribedText)
+                    onResult(transcribedText)
                 }
             }
         }
+    }
+
+    fun generateAudioFromText(text: String, onResult : (InputStream) -> Unit) {
+        val client = OkHttpClient()
+
+        val jsonBody = JSONObject().apply {
+            put("model", "tts-1") // or latest TTS model available
+            put("input", text)
+            put("voice", "alloy") // pick any voice provided
+        }
+
+        val requestBody = jsonBody.toString().toRequestBody("application/json".toMediaType())
+
+        val request = Request.Builder()
+            .url("https://api.openai.com/v1/audio/speech")
+            .header("Authorization", "Bearer $OPEN_AI_API_KEY")
+            .post(requestBody)
+            .build()
+
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) { /* handle failure */ }
+
+            override fun onResponse(call: Call, response: Response) {
+                val audioStream = response.body!!.byteStream()
+                onResult(audioStream)
+            }
+        })
     }
 
 }
