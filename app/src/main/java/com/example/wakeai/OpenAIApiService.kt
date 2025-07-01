@@ -1,11 +1,17 @@
 package com.example.wakeai
 
 import android.util.Log
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import org.json.JSONObject
@@ -48,6 +54,40 @@ object OpenAIApiService {
                 //generateAudioFromText(responseText)
             }
         })
+    }
+
+    fun sendAudioToWhisperAPI(audioData: ByteArray) {
+        CoroutineScope(Dispatchers.IO).launch {
+            val client = OkHttpClient()
+
+            val requestBody = MultipartBody.Builder()
+                .setType(MultipartBody.FORM)
+                .addFormDataPart(
+                    "file", "speech.wav",
+                    RequestBody.create("audio/wav".toMediaTypeOrNull(), audioData)
+                )
+                .addFormDataPart("model", "whisper-1")
+                .build()
+
+            val request = Request.Builder()
+                .url("https://api.openai.com/v1/audio/transcriptions")
+                .addHeader("Authorization", "Bearer $OPEN_AI_API_KEY")
+                .post(requestBody)
+                .build()
+
+            client.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) {
+                    println("Whisper API request failed: ${response.body?.string()}")
+                } else {
+                    val jsonResponse = JSONObject(response.body?.string() ?: "")
+                    val transcribedText = jsonResponse.getString("text")
+                    println("Transcribed Text: $transcribedText")
+
+                    // Now you can send the transcription to ChatGPT
+                    //getChatGPTResponse(transcribedText)
+                }
+            }
+        }
     }
 
 }

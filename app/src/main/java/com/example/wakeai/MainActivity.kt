@@ -4,6 +4,7 @@ import ai.picovoice.porcupine.Porcupine
 import ai.picovoice.porcupine.PorcupineException
 import ai.picovoice.porcupine.PorcupineManager
 import ai.picovoice.porcupine.PorcupineManagerCallback
+import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
@@ -24,6 +25,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private val AUDIO_PERMISSION_CODE = 101
 
+    private val audioRecorderWrapper = AudioRecorderWrapper(this)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -36,7 +39,22 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.button.setOnClickListener {
-            OpenAIApiService.getChatGPTResponse("give me a one-sentece joke")
+            if (ActivityCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.RECORD_AUDIO
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                return@setOnClickListener
+            }
+            audioRecorderWrapper.startListeningToUserSpeech { result ->
+                if (result != null) {
+                    Log.d("MainActivity", "Audio data received, size: ${result.size}")
+                    OpenAIApiService.sendAudioToWhisperAPI(result)
+                } else {
+                    Log.d("MainActivity", "No audio data received")
+                }
+            }
+            //OpenAIApiService.getChatGPTResponse("give me a one-sentece joke")
             //requestAudioPermission()
         }
     }
