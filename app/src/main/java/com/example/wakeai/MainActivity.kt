@@ -5,6 +5,7 @@ import ai.picovoice.porcupine.PorcupineException
 import ai.picovoice.porcupine.PorcupineManager
 import ai.picovoice.porcupine.PorcupineManagerCallback
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.media.MediaPlayer
 import android.os.Bundle
@@ -43,28 +44,8 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.button.setOnClickListener {
-            if (ActivityCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.RECORD_AUDIO
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                return@setOnClickListener
-            }
-            audioRecorderWrapper.startListeningToUserSpeech { result ->
-                if (result != null) {
-                    Log.d("MainActivity", "Audio data received, size: ${result.size}")
-                    OpenAIApiService.sendAudioToWhisperAPI(result) { whisperResponse ->
-                        OpenAIApiService.getChatGPTResponse(whisperResponse) { textResponse ->
-                            OpenAIApiService.generateAudioFromText(textResponse) { audioTranscribed ->
-                                Log.d("MainActivity", "Audio generated")
-                                playAudio(audioTranscribed)
-                            }
-                        }
-                    }
-                } else {
-                    Log.d("MainActivity", "No audio data received")
-                }
-            }
+            binding.infoText.text = "Sleeping..."
+            requestAudioPermission()
         }
     }
 
@@ -97,9 +78,38 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    @SuppressLint("MissingPermission")
     private val porcupineCallback = PorcupineManagerCallback { keywordIndex ->
         if (keywordIndex == 0) {
             Log.d("VoiceDetector", "detected")
+            binding.infoText.text = "Awake"
+            audioRecorderWrapper.startListeningToUserSpeech { result ->
+                if (result != null) {
+                    Log.d("MainActivity", "Audio data received, size: ${result.size}")
+                    runOnUiThread {
+                        binding.infoText.text = "Transcribing audio..."
+                    }
+                    OpenAIApiService.sendAudioToWhisperAPI(result) { whisperResponse ->
+                        runOnUiThread {
+                            binding.infoText.text = "Loading audio..."
+                        }
+                        OpenAIApiService.getChatGPTResponse(whisperResponse) { textResponse ->
+                            runOnUiThread {
+                                binding.infoText.text = "Loading response audio..."
+                            }
+                            OpenAIApiService.generateAudioFromText(textResponse) { audioTranscribed ->
+                                runOnUiThread {
+                                    binding.infoText.text = "Playing response..."
+                                }
+                                Log.d("MainActivity", "Audio generated")
+                                playAudio(audioTranscribed)
+                            }
+                        }
+                    }
+                } else {
+                    Log.d("MainActivity", "No audio data received")
+                }
+            }
         } else if (keywordIndex == 1) {
             // bumblebee detected
             Log.d("VoiceDetector", "not detected")
