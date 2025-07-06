@@ -24,7 +24,7 @@ class AudioRecorderWrapper(context: Context) {
         private const val AUDIO_FORMAT = AudioFormat.ENCODING_PCM_16BIT
         private val BUFFER_SIZE = AudioRecord.getMinBufferSize(
             SAMPLE_RATE, CHANNEL_CONFIG, AUDIO_FORMAT
-        ) * 4
+        ) * 8
 
     }
 
@@ -83,6 +83,7 @@ class AudioRecorderWrapper(context: Context) {
             val pcmData = audioBuffer?.toByteArray()
             audioBuffer = null // Clear the buffer
             onStopListening(pcmData?.let { pcmToWav(it) })
+            //playAudio(pcmToWav(pcmData!!))
         }
     }
 
