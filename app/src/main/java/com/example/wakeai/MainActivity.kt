@@ -82,7 +82,7 @@ class MainActivity : AppCompatActivity() {
     private val porcupineCallback = PorcupineManagerCallback { keywordIndex ->
         if (keywordIndex == 0) {
             Log.d("VoiceDetector", "detected")
-            binding.infoText.text = "Awake"
+            binding.infoText.text = "Listening..."
             audioRecorderWrapper.startListeningToUserSpeech { result ->
                 if (result != null) {
                     Log.d("MainActivity", "Audio data received, size: ${result.size}")
@@ -106,7 +106,7 @@ class MainActivity : AppCompatActivity() {
                                 Log.d("MainActivity", "Audio response generated")
                                 playAudio(audioTranscribed) {
                                     runOnUiThread {
-                                        binding.infoText.text = "Awake"
+                                        binding.infoText.text = "Sleeping..."
                                     }
                                 }
                             }
