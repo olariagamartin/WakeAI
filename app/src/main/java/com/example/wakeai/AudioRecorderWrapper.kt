@@ -1,8 +1,11 @@
 package com.example.wakeai
 
 import android.content.Context
+import android.media.AudioAttributes
 import android.media.AudioFormat
+import android.media.AudioManager
 import android.media.AudioRecord
+import android.media.AudioTrack
 import android.media.MediaRecorder
 import android.util.Log
 import androidx.annotation.RequiresPermission
@@ -16,12 +19,12 @@ class AudioRecorderWrapper(context: Context) {
 
     companion object {
         private const val SAMPLE_RATE = 16000 // Whisper API recommended rate
-        private const val AUDIO_SOURCE = MediaRecorder.AudioSource.MIC
+        private const val AUDIO_SOURCE = MediaRecorder.AudioSource.VOICE_RECOGNITION
         private const val CHANNEL_CONFIG = AudioFormat.CHANNEL_IN_MONO
         private const val AUDIO_FORMAT = AudioFormat.ENCODING_PCM_16BIT
         private val BUFFER_SIZE = AudioRecord.getMinBufferSize(
             SAMPLE_RATE, CHANNEL_CONFIG, AUDIO_FORMAT
-        )
+        ) * 4
 
     }
 
@@ -81,6 +84,28 @@ class AudioRecorderWrapper(context: Context) {
             audioBuffer = null // Clear the buffer
             onStopListening(pcmData?.let { pcmToWav(it) })
         }
+    }
+
+    private fun playAudio(audioData: ByteArray) {
+        val player = AudioTrack(
+            AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_MEDIA)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                .build(),
+            AudioFormat.Builder()
+                .setSampleRate(SAMPLE_RATE)
+                .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+                .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
+                .build(),
+            BUFFER_SIZE,
+            AudioTrack.MODE_STREAM,
+            AudioManager.AUDIO_SESSION_ID_GENERATE
+        )
+        player.play()
+        val result = pcmToWav(audioData)
+        player.write(result, 0, result?.size ?: 0)
+        player.stop()
+        player.release()
     }
 
     private fun isSilent(audioData: ByteArray, readBytes: Int, threshold: Int): Boolean {
