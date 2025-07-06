@@ -34,7 +34,7 @@ class AudioRecorderWrapper(context: Context) {
     fun startListeningToUserSpeech(onStopListening: (ByteArray?) -> Unit) {
         var silentFrames = 0
         val silenceThreshold = 50  // Adjust based on testing
-        val SILENCE_TIMEOUT_MS = 2000L
+        val SILENCE_TIMEOUT_MS = 1000L
         val CHECK_INTERVAL_MS = 100L
         val maxSilentChecks = (SILENCE_TIMEOUT_MS / CHECK_INTERVAL_MS).toInt()
 
