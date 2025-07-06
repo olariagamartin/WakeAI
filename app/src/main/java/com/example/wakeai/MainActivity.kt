@@ -93,16 +93,22 @@ class MainActivity : AppCompatActivity() {
                         runOnUiThread {
                             binding.infoText.text = "Loading audio..."
                         }
+                        Log.d("MainActivity", "Whisper response received")
                         OpenAIApiService.getChatGPTResponse(whisperResponse) { textResponse ->
                             runOnUiThread {
                                 binding.infoText.text = "Loading response audio..."
                             }
+                            Log.d("MainActivity", "GPT response received")
                             OpenAIApiService.generateAudioFromText(textResponse) { audioTranscribed ->
                                 runOnUiThread {
                                     binding.infoText.text = "Playing response..."
                                 }
-                                Log.d("MainActivity", "Audio generated")
-                                playAudio(audioTranscribed)
+                                Log.d("MainActivity", "Audio response generated")
+                                playAudio(audioTranscribed) {
+                                    runOnUiThread {
+                                        binding.infoText.text = "Awake"
+                                    }
+                                }
                             }
                         }
                     }
@@ -130,7 +136,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    fun playAudio(audioStream: InputStream) {
+    private fun playAudio(audioStream: InputStream, onCompletion: () -> Unit) {
         val tempAudioFile = File.createTempFile("tts_audio", ".mp3", cacheDir)
         audioStream.use { input ->
             FileOutputStream(tempAudioFile).use { output ->
@@ -144,7 +150,7 @@ class MainActivity : AppCompatActivity() {
         mediaPlayer.setOnCompletionListener {
             mediaPlayer.release()
             tempAudioFile.delete()
-            // Resume listening if needed
+            onCompletion()
         }
         mediaPlayer.start()
     }
