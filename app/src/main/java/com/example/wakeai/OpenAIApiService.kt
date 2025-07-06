@@ -96,7 +96,7 @@ object OpenAIApiService {
         val jsonBody = JSONObject().apply {
             put("model", "tts-1") // or latest TTS model available
             put("input", text)
-            put("voice", "alloy") // pick any voice provided
+            put("voice", "nova") // pick any voice provided
         }
 
         val requestBody = jsonBody.toString().toRequestBody("application/json".toMediaType())
