@@ -23,7 +23,7 @@ object OpenAIApiService {
     private val client = OkHttpClient()
     private val jsonMediaType = "application/json".toMediaType()
 
-    private const val OPEN_AI_API_KEY = "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"
+    private val OPEN_AI_API_KEY = BuildConfig.OPENAI_API_KEY
 
     fun getChatGPTResponse(prompt: String, onResult: (String) -> Unit) {
 

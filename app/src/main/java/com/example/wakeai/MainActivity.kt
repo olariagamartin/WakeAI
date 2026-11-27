@@ -25,7 +25,7 @@ import java.io.InputStream
 
 class MainActivity : AppCompatActivity() {
 
-    private val PORCUPINE_API_KEY = "9mluvEpgDHKo6dIRdHOv3alIMQBsVY5dDCcf3NPkkpkqaluJNuKYXQ=="
+    private val PORCUPINE_API_KEY = BuildConfig.PORCUPINE_API_KEY
     private lateinit var porcupineManager: PorcupineManager
     private lateinit var binding: ActivityMainBinding
     private val AUDIO_PERMISSION_CODE = 101
